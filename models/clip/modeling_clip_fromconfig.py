@@ -2,7 +2,7 @@
  Copyright (c) 2025, yasaisen.
  All rights reserved.
 
- last modified in 2502261412
+ last modified in 2503020123
 """
 
 import torch
@@ -58,6 +58,7 @@ class CLIPModel(nn.Module):
         clip_cfg = cfg['model']['clip_model']
         temperature = float(clip_cfg.get("temperature"))
         use_logits = bool(clip_cfg.get("use_logits"))
+        embed_dim = int(clip_cfg.get("embed_dim"))
 
         if cfg['model'].get('text_encoder') is not None:
             text_cfg = cfg['model']['text_encoder']
@@ -66,17 +67,17 @@ class CLIPModel(nn.Module):
             text_encoder_dim = int(text_cfg.get("text_encoder_dim"))
             text_dim_proj = bool(text_cfg.get("text_dim_proj"))
 
-            if use_logits:
-                text_encoder = None
-            else:
-                text_encoder = TextEncoder(
-                    text_model_path, 
-                    tokenizer_path, 
-                    text_encoder_dim, 
-                    dim_proj=text_dim_proj, 
-                    output_dtype=torch.float32, 
-                    device=device
-                )
+            text_encoder = TextEncoder(
+                text_model_path, 
+                tokenizer_path, 
+                text_encoder_dim, 
+                use_logits=use_logits, 
+                embed_dim=embed_dim, 
+                dim_proj=text_dim_proj, 
+                dtype=torch.float32, 
+                output_dtype=torch.float32, 
+                device=device
+            )
 
         if cfg['model'].get('img_encoder') is not None:
             img_cfg = cfg['model']['img_encoder']
@@ -90,7 +91,7 @@ class CLIPModel(nn.Module):
             img_encoder = ImageEncoder(
                 img_model_path, 
                 img_encoder_dim, 
-                embed_dim=text_encoder_dim, 
+                embed_dim=embed_dim, 
                 dim_proj=img_dim_proj, 
                 rank=img_lora_rank, 
                 alpha=img_lora_alpha, 

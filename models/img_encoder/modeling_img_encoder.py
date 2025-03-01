@@ -2,7 +2,7 @@
  Copyright (c) 2025, yasaisen.
  All rights reserved.
 
- last modified in 2502251532
+ last modified in 2503020123
 """
 
 import torch
@@ -52,13 +52,12 @@ class ImageEncoder(nn.Module):
         self.img_encoder_lora.add_lora(rank=self.rank, alpha=self.alpha, dropout=self.dropout)
         log_print(self.state_name, f"basemodel trainable params: {get_trainable_params(self.img_encoder_lora.base_model)}")
 
-        self.img_encoder_lora.base_model.to(self.device) # 5365MiB
-
         if self.dim_proj:
             self.embed_proj = nn.Linear(self.encoder_dim , self.embed_dim).to(self.device)#.to(self.dtype)
-            log_print(self.state_name, f"basemodel trainable params: {get_trainable_params(self.img_encoder_lora.base_model) + get_trainable_params(self.embed_proj)}")
         
         self.normalize = lambda x: F.normalize(x, p=2, dim=1)
+        log_print(self.state_name, f"basemodel trainable params: {get_trainable_params(self)}")
+        self.img_encoder_lora.base_model.to(self.device) # 5365MiB
         log_print(self.state_name, "...Done\n")
         
     def forward(self, x):
