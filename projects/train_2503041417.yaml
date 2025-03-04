@@ -1,0 +1,44 @@
+  # Copyright (c) 2025, yasaisen.
+  # All rights reserved.
+  # 
+  # last modified in 2503041417
+
+model:
+  text_encoder:
+    text_model_path: "research_buildItUp/weights/BiMediX2-8B_LM/BiMediX2-8B_LM.pt"
+    tokenizer_path: "research_buildItUp/weights/BiMediX2-8B_LM"
+    text_encoder_dim: 4096
+    text_dim_proj: True
+  
+  img_encoder:
+    img_model_path: "research_buildItUp/weights/H-optimus-0/H-optimus-0.pt"
+    img_encoder_dim: 1536
+    img_dim_proj: True
+    img_size: 224
+    rank: 32
+    alpha: 1.0
+    dropout: 0.1
+  
+  clip_model:
+    temperature: 0.07
+    use_logits: True
+    embed_dim: 256
+    use_hard_pairs: True
+    use_focal_loss: True
+    gamma: 2.0
+
+dataset:
+  data_path: "research_datasets/cleanPCset_v1"
+  metadata_path: "research_datasets/cleanPCset_v1/2502202053_meta_list_light.json"
+  text_logits_path: "research_datasets/cleanPCset_v1/train_text_logits_fp16_2502241856"
+
+task:
+  root_path: "/home/yasaisen/Desktop/27_research"
+  batch_size: 8
+  learning_rate: 3e-5
+  num_epochs: 30
+  weight_decay: 1e-4
+  warmup_steps: 1000
+  device: "cuda"  
+  output_path: "research_buildItUp/outputs"
+
