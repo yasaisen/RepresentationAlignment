@@ -2,7 +2,7 @@
  Copyright (c) 2025, yasaisen.
  All rights reserved.
 
- last modified in 2503041417
+ last modified in 2503141354
 """
 
 import torch
@@ -27,7 +27,6 @@ class CLIPModel(nn.Module):
         gamma=2.0, 
         class_weights=None,
         device='cuda', 
-        use_logits=False, 
     ):
         super().__init__()
         self.state_name = 'CLIPModel'
@@ -35,7 +34,6 @@ class CLIPModel(nn.Module):
         print()
         log_print(self.state_name, "Building...")
 
-        self.use_logits = use_logits
         self.text_encoder = text_encoder
         self.img_encoder = img_encoder
 
@@ -52,8 +50,6 @@ class CLIPModel(nn.Module):
         # 雜訊對比估計器相關參數 (InfoNCE)
         self.register_buffer("mask", (~torch.eye(self.batch_size, self.batch_size, dtype=bool)).float())
 
-
-        log_print(self.state_name, f"using_logits: {self.use_logits}")
         log_print(self.state_name, f"basemodel trainable params: {get_trainable_params(self)}")
         log_print(self.state_name, "...Done\n")
         
@@ -138,7 +134,6 @@ class CLIPModel(nn.Module):
 
         clip_cfg = cfg['model']['clip_model']
         temperature = float(clip_cfg.get("temperature"))
-        use_logits = bool(clip_cfg.get("use_logits"))
         embed_dim = int(clip_cfg.get("embed_dim"))
         use_hard_pairs = bool(clip_cfg.get("use_hard_pairs"))
         use_focal_loss = bool(clip_cfg.get("use_focal_loss"))
@@ -150,12 +145,13 @@ class CLIPModel(nn.Module):
             tokenizer_path = os.path.join(root_path, text_cfg.get("tokenizer_path"))
             text_encoder_dim = int(text_cfg.get("text_encoder_dim"))
             text_dim_proj = bool(text_cfg.get("text_dim_proj"))
+            text_use_logits = bool(text_cfg.get("text_use_logits"))
 
             text_encoder = TextEncoder(
                 text_model_path, 
                 tokenizer_path, 
                 text_encoder_dim, 
-                use_logits=use_logits, 
+                use_logits=text_use_logits, 
                 embed_dim=embed_dim, 
                 dim_proj=text_dim_proj, 
                 dtype=torch.float32, 
@@ -168,18 +164,34 @@ class CLIPModel(nn.Module):
             img_model_path = os.path.join(root_path, img_cfg.get("img_model_path"))
             img_encoder_dim = int(img_cfg.get("img_encoder_dim"))
             img_dim_proj = bool(img_cfg.get("img_dim_proj"))
-            img_lora_rank = int(img_cfg.get("rank"))
-            img_lora_alpha = float(img_cfg.get("alpha"))
-            img_lora_dropout = float(img_cfg.get("dropout"))
+            img_use_lora = bool(img_cfg.get("use_lora"))
+            if img_use_lora:
+                lora_config = {
+                    'rank': int(img_cfg.get("lora_rank")),
+                    'alpha': float(img_cfg.get("lora_alpha")),
+                    'dropout': float(img_cfg.get("lora_dropout")),
+                }
+            else:
+                lora_config = None
+            img_use_adapter = bool(img_cfg.get("use_adapter"))
+            if img_use_adapter:
+                adapter_config = {
+                    'bottleneck_dim': int(img_cfg.get("adapter_bottleneck_dim")),
+                    'dropout': float(img_cfg.get("adapter_dropout")),
+                    'scaling': float(img_cfg.get("adapter_scaling")),
+                }
+            else:
+                adapter_config = None
+            img_use_logits = bool(img_cfg.get("img_use_logits"))
 
             img_encoder = ImageEncoder(
                 img_model_path, 
                 img_encoder_dim, 
                 embed_dim=embed_dim, 
+                use_logits=img_use_logits, 
                 dim_proj=img_dim_proj, 
-                rank=img_lora_rank, 
-                alpha=img_lora_alpha, 
-                dropout=img_lora_dropout,
+                lora_config=lora_config,
+                adapter_config=adapter_config,
                 device=device
             )
 
@@ -196,7 +208,6 @@ class CLIPModel(nn.Module):
             gamma=gamma, 
             class_weights=None,
             device=device, 
-            use_logits=use_logits, 
         )
         return model
     
