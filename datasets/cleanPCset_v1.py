@@ -18,7 +18,7 @@ class cleanPCset_v1_Dataset(Dataset):
         meta_list, 
         data_path, 
         split,
-        img_processor, 
+        img_processor=None, 
         text_processor=None, 
         img_logits_path=None,
         text_logits_path=None,
